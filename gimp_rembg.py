@@ -5,6 +5,7 @@ import gi
 
 gi.require_version("Gimp", "3.0")
 gi.require_version("Gegl", "0.4")
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gimp, Gegl, GLib, Gio, Gtk
 import sys
 import os
@@ -316,8 +317,7 @@ class RembgPlugin(Gimp.PlugIn):
         if not python_exe:
             Gimp.message(
                 "rembg not found!\n\n"
-                "Run setup first: Rembg > Setup...\n"
-                "Or run install_deps.bat / install_deps.sh"
+                "Run setup first: Rembg > Setup..."
             )
             return procedure.new_return_values(
                 Gimp.PDBStatusType.EXECUTION_ERROR,
