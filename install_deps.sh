@@ -1,54 +1,50 @@
-#!/bin/bash
-# GIMP Rembg - Install Dependencies
-# Creates an isolated venv inside this folder with rembg installed
+#!/usr/bin/env bash
+# install_deps.sh — Install rembg into the plugin's venv
+# Run this if you prefer the terminal over Rembg > Setup... in GIMP.
 
 set -e
 
-echo "============================================"
-echo " GIMP Rembg - Install Dependencies"
-echo "============================================"
-echo ""
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV_DIR="$SCRIPT_DIR/venv"
 
-# Find Python
+echo "=== GIMP Rembg Setup ==="
+
+# Check Python
 PYTHON=""
 for cmd in python3 python; do
-    if command -v $cmd &> /dev/null; then
-        PYTHON=$cmd
+    if command -v "$cmd" >/dev/null 2>&1; then
+        PYTHON="$cmd"
         break
     fi
 done
 
 if [ -z "$PYTHON" ]; then
-    echo "ERROR: Python not found!"
-    echo "Install Python 3.8+ first."
+    echo "Error: Python 3 not found. Install it first."
     exit 1
 fi
 
-echo "Using: $PYTHON"
-echo ""
+echo "Using: $PYTHON ($($PYTHON --version))"
 
 # Remove old venv
-if [ -d venv ]; then
+if [ -d "$VENV_DIR" ]; then
     echo "Removing old venv..."
-    rm -rf venv
+    rm -rf "$VENV_DIR"
 fi
 
 # Create venv
-echo "Creating isolated environment..."
-$PYTHON -m venv venv
+echo "Creating venv..."
+"$PYTHON" -m venv "$VENV_DIR"
 
-# Install deps
-echo "Installing rembg and dependencies..."
-venv/bin/pip install --upgrade pip
-venv/bin/pip install pillow onnxruntime rembg
+# Install
+echo "Upgrading pip..."
+"$VENV_DIR/bin/pip" install --upgrade pip
+
+echo "Installing rembg (this may take a few minutes)..."
+"$VENV_DIR/bin/pip" install pillow onnxruntime rembg
 
 # Verify
-echo ""
 echo "Verifying..."
-venv/bin/python -c "import rembg; print('rembg', rembg.__version__, 'OK')"
+"$VENV_DIR/bin/python" -c "import rembg; print(f'rembg {rembg.__version__} installed!')"
 
 echo ""
-echo "============================================"
-echo " Done! Restart GIMP."
-echo " Then: Filters > Remove Background (AI)..."
-echo "============================================"
+echo "Done! Restart GIMP and use Rembg > Remove Background..."
