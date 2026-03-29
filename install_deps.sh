@@ -1,38 +1,50 @@
-#!/usr/bin/env python3
-"""Worker script for GIMP RemBG plugin - runs rembg in a subprocess."""
-import sys
-import os
+#!/usr/bin/env bash
+# install_deps.sh — Install rembg into the plugin's venv
+# Run this if you prefer the terminal over Rembg > Setup... in GIMP.
 
-def main():
-    if len(sys.argv) != 4:
-        print(f"Usage: {sys.argv[0]} <input> <output> <model>", file=sys.stderr)
-        sys.exit(1)
+set -e
 
-    input_path, output_path, model_name = sys.argv[1], sys.argv[2], sys.argv[3]
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV_DIR="$SCRIPT_DIR/venv"
 
-    if not os.path.exists(input_path):
-        print(f"Input file not found: {input_path}", file=sys.stderr)
-        sys.exit(1)
+echo "=== GIMP Rembg Setup ==="
 
-    try:
-        from rembg import remove
-        from PIL import Image
-    except ImportError as e:
-        print(f"Import error: {e}", file=sys.stderr)
-        sys.exit(1)
+# Check Python
+PYTHON=""
+for cmd in python3 python; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+        PYTHON="$cmd"
+        break
+    fi
+done
 
-    try:
-        img = Image.open(input_path)
-        result = remove(img, alpha_matting=False,
-                       alpha_matting_foreground_threshold=240,
-                       alpha_matting_background_threshold=10,
-                       alpha_matting_erode_size=10,
-                       only_mask=False,
-                       post_process_mask=False)
-        result.save(output_path)
-    except Exception as e:
-        print(f"rembg error: {e}", file=sys.stderr)
-        sys.exit(1)
+if [ -z "$PYTHON" ]; then
+    echo "Error: Python 3 not found. Install it first."
+    exit 1
+fi
 
-if __name__ == "__main__":
-    main()
+echo "Using: $PYTHON ($($PYTHON --version))"
+
+# Remove old venv
+if [ -d "$VENV_DIR" ]; then
+    echo "Removing old venv..."
+    rm -rf "$VENV_DIR"
+fi
+
+# Create venv
+echo "Creating venv..."
+"$PYTHON" -m venv "$VENV_DIR"
+
+# Install
+echo "Upgrading pip..."
+"$VENV_DIR/bin/pip" install --upgrade pip
+
+echo "Installing rembg (this may take a few minutes)..."
+"$VENV_DIR/bin/pip" install pillow onnxruntime rembg
+
+# Verify
+echo "Verifying..."
+"$VENV_DIR/bin/python" -c "import rembg; print(f'rembg {rembg.__version__} installed!')"
+
+echo ""
+echo "Done! Restart GIMP and use Rembg > Remove Background..."
